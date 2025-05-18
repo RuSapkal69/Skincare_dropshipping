@@ -1,8 +1,8 @@
-const mongoose = require('mongoose');
-const bcrypt = require('bcrypt');
-const crypto = require('crypto');
+import { Schema, model } from 'mongoose';
+import { genSalt, hash, compare } from 'bcrypt';
+import { randomBytes, createHash } from 'crypto';
 
-const UserSchema = new mongoose.Schema({
+const UserSchema = new Schema({
   firstName: {
     type: String,
     required: [true, 'First name is required'],
@@ -56,7 +56,7 @@ const UserSchema = new mongoose.Schema({
   },
   wishlist: [
     {
-      type: mongoose.Schema.Types.ObjectId,
+      type: Schema.Types.ObjectId,
       ref: 'Product'
     }
   ],
@@ -85,24 +85,23 @@ UserSchema.pre('save', async function(next) {
     next();
   }
   
-  const salt = await bcrypt.genSalt(10);
-  this.password = await bcrypt.hash(this.password, salt);
+  const salt = await genSalt(10);
+  this.password = await hash(this.password, salt);
   next();
 });
 
 // Method to compare passwords
 UserSchema.methods.matchPassword = async function(enteredPassword) {
-  return await bcrypt.compare(enteredPassword, this.password);
+  return await compare(enteredPassword, this.password);
 };
 
 // Generate and hash password reset token
 UserSchema.methods.getResetPasswordToken = function() {
   // Generate token
-  const resetToken = crypto.randomBytes(20).toString('hex');
+  const resetToken = randomBytes(20).toString('hex');
   
   // Hash token and set to resetPasswordToken field
-  this.resetPasswordToken = crypto
-    .createHash('sha256')
+  this.resetPasswordToken = createHash('sha256')
     .update(resetToken)
     .digest('hex');
   
@@ -115,15 +114,14 @@ UserSchema.methods.getResetPasswordToken = function() {
 // Generate email verification token
 UserSchema.methods.getVerificationToken = function() {
   // Generate token
-  const verificationToken = crypto.randomBytes(20).toString('hex');
+  const verificationToken = randomBytes(20).toString('hex');
   
   // Hash token and set to verificationToken field
-  this.verificationToken = crypto
-    .createHash('sha256')
+  this.verificationToken = createHash('sha256')
     .update(verificationToken)
     .digest('hex');
   
   return verificationToken;
 };
 
-module.exports = mongoose.model('User', UserSchema);
+export default model('User', UserSchema);

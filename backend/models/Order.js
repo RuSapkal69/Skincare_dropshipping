@@ -1,6 +1,6 @@
-const mongoose = require('mongoose');
+import { Schema, model } from 'mongoose';
 
-const OrderSchema = new mongoose.Schema({
+const OrderSchema = new Schema({
   customerName: {
     type: String,
     required: [true, 'Customer name is required']
@@ -28,7 +28,7 @@ const OrderSchema = new mongoose.Schema({
   products: [
     {
       product: {
-        type: mongoose.Schema.Types.ObjectId,
+        type: Schema.Types.ObjectId,
         ref: 'Product',
         required: true
       },
@@ -106,4 +106,4 @@ OrderSchema.pre('save', function(next) {
   next();
 });
 
-module.exports = mongoose.model('Order', OrderSchema);
+export default model('Order', OrderSchema);

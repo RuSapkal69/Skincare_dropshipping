@@ -1,14 +1,7 @@
-const express = require('express');
-const router = express.Router();
-const { protect } = require('../middleware/authMiddleware');
-const { 
-  getAllProducts, 
-  getProductById, 
-  searchProducts,
-  getProductsByCategory,
-  getProductsByOrigin,
-  refreshProducts
-} = require('../controllers/productController');
+import { Router } from 'express';
+const router = Router();
+import { protect } from '../middleware/authMiddleware';
+import { getAllProducts, getProductById, searchProducts, getProductsByCategory, getProductsByOrigin, refreshProducts } from '../controllers/productController';
 
 // Get all products
 router.get('/', getAllProducts);
@@ -28,4 +21,4 @@ router.get('/origin/:origin', getProductsByOrigin);
 // Refresh products from dropshipping APIs (admin only)
 router.get('/refresh', protect, refreshProducts);
 
-module.exports = router;
+export default router;

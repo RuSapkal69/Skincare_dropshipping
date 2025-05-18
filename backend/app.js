@@ -32,8 +32,10 @@ app.use(morgan('dev'));
 
 // Routes
 app.use('/api/products', require('./routes/productRoutes'));
-app.use('/api/orders', require('./routes/orderRoutes'));
+app.use('/api/orders', require('./routes/orderRoutes').default);
 app.use('/api/admin', require('./routes/adminRoutes'));
+app.use('/api/users', require('./routes/userRoutes'));
+app.use('/api/cart', require('./routes/cartRoutes'));
 
 // Health check route
 app.get('/health', (req, res) => {

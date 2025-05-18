@@ -1,11 +1,11 @@
-const jwt = require('jsonwebtoken');
-const crypto = require('crypto');
-const nodemailer = require('nodemailer');
-const Admin = require('../models/Admin');
+import { sign } from 'jsonwebtoken';
+import { createHash } from 'crypto';
+import { createTransport } from 'nodemailer';
+import { findOne, create, findById } from '../models/Admin';
 
 // Generate JWT Token
 const generateToken = (id) => {
-  return jwt.sign({ id }, process.env.JWT_SECRET, {
+  return sign({ id }, process.env.JWT_SECRET, {
     expiresIn: process.env.JWT_EXPIRE
   });
 };
@@ -13,7 +13,7 @@ const generateToken = (id) => {
 // @desc    Login admin
 // @route   POST /api/admin/login
 // @access  Public
-exports.loginAdmin = async (req, res) => {
+export async function loginAdmin(req, res) {
   try {
     const { username, password } = req.body;
 
@@ -26,7 +26,7 @@ exports.loginAdmin = async (req, res) => {
     }
 
     // Check if admin exists
-    const admin = await Admin.findOne({ username });
+    const admin = await findOne({ username });
     if (!admin) {
       return res.status(401).json({
         success: false,
@@ -67,17 +67,17 @@ exports.loginAdmin = async (req, res) => {
       error: error.message
     });
   }
-};
+}
 
 // @desc    Register admin (for initial setup or by super-admin)
 // @route   POST /api/admin/register
 // @access  Private/SuperAdmin
-exports.registerAdmin = async (req, res) => {
+export async function registerAdmin(req, res) {
   try {
     const { username, password, email, role } = req.body;
 
     // Create admin
-    const admin = await Admin.create({
+    const admin = await create({
       username,
       password,
       email,
@@ -101,14 +101,14 @@ exports.registerAdmin = async (req, res) => {
       error: error.message
     });
   }
-};
+}
 
 // @desc    Get current admin profile
 // @route   GET /api/admin/me
 // @access  Private
-exports.getAdminProfile = async (req, res) => {
+export async function getAdminProfile(req, res) {
   try {
-    const admin = await Admin.findById(req.admin.id).select('-password');
+    const admin = await findById(req.admin.id).select('-password');
     
     res.status(200).json({
       success: true,
@@ -121,12 +121,12 @@ exports.getAdminProfile = async (req, res) => {
       error: error.message
     });
   }
-};
+}
 
 // @desc    Generate OTP for login
 // @route   POST /api/admin/login/otp/generate
 // @access  Public
-exports.generateLoginOTP = async (req, res) => {
+export async function generateLoginOTP(req, res) {
   try {
     const { email } = req.body;
 
@@ -138,7 +138,7 @@ exports.generateLoginOTP = async (req, res) => {
     }
 
     // Find admin by email
-    const admin = await Admin.findOne({ email });
+    const admin = await findOne({ email });
     if (!admin) {
       return res.status(404).json({
         success: false,
@@ -150,7 +150,7 @@ exports.generateLoginOTP = async (req, res) => {
     const otp = Math.floor(100000 + Math.random() * 900000).toString();
     
     // Hash the OTP
-    const otpHash = crypto.createHash('sha256').update(otp).digest('hex');
+    const otpHash = createHash('sha256').update(otp).digest('hex');
     
     // Set OTP expiry (10 minutes)
     const otpExpiry = Date.now() + 10 * 60 * 1000;
@@ -161,7 +161,7 @@ exports.generateLoginOTP = async (req, res) => {
     await admin.save();
 
     // Send OTP via email
-    const transporter = nodemailer.createTransport({
+    const transporter = createTransport({
       service: process.env.EMAIL_SERVICE,
       auth: {
         user: process.env.EMAIL_USERNAME,
@@ -198,12 +198,12 @@ exports.generateLoginOTP = async (req, res) => {
       error: error.message
     });
   }
-};
+}
 
 // @desc    Verify OTP and login
 // @route   POST /api/admin/login/otp/verify
 // @access  Public
-exports.verifyLoginOTP = async (req, res) => {
+export async function verifyLoginOTP(req, res) {
   try {
     const { email, otp } = req.body;
 
@@ -215,7 +215,7 @@ exports.verifyLoginOTP = async (req, res) => {
     }
 
     // Find admin by email
-    const admin = await Admin.findOne({ email });
+    const admin = await findOne({ email });
     if (!admin) {
       return res.status(404).json({
         success: false,
@@ -244,7 +244,7 @@ exports.verifyLoginOTP = async (req, res) => {
     }
 
     // Verify OTP
-    const hashedOTP = crypto.createHash('sha256').update(otp).digest('hex');
+    const hashedOTP = createHash('sha256').update(otp).digest('hex');
     if (hashedOTP !== admin.otpHash) {
       return res.status(401).json({
         success: false,
@@ -280,4 +280,4 @@ exports.verifyLoginOTP = async (req, res) => {
       error: error.message
     });
   }
-};
+}

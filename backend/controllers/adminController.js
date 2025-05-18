@@ -1,15 +1,15 @@
-const Order = require('../models/Order');
-const Product = require('../models/Product');
-const mongoose = require('mongoose');
-const moment = require('moment');
-const { createObjectCsvWriter } = require('csv-writer');
-const fs = require('fs');
-const path = require('path');
+import { aggregate, countDocuments, find } from '../models/Order';
+import { find as _find, aggregate as _aggregate, countDocuments as _countDocuments, findByIdAndUpdate, findByIdAndDelete } from '../models/Product';
+import mongoose from 'mongoose';
+import moment from 'moment';
+import { createObjectCsvWriter } from 'csv-writer';
+import { existsSync, mkdirSync, unlink } from 'fs';
+import { join } from 'path';
 
 // @desc    Get dashboard stats
 // @route   GET /api/admin/stats
 // @access  Private/Admin
-exports.getDashboardStats = async (req, res) => {
+export async function getDashboardStats(req, res) {
   try {
     const { 
       startDate, 
@@ -63,7 +63,7 @@ exports.getDashboardStats = async (req, res) => {
     if (country) previousOrderFilter['shippingAddress.country'] = country;
     
     // Get total earnings for current period
-    const totalEarnings = await Order.aggregate([
+    const totalEarnings = await aggregate([
       { $match: orderFilter },
       { $group: { _id: null, total: { $sum: '$totalAmount' } } }
     ]);
@@ -71,7 +71,7 @@ exports.getDashboardStats = async (req, res) => {
     // Get total earnings for previous period if requested
     let previousTotalEarnings = [];
     if (compareWithPrevious === 'true') {
-      previousTotalEarnings = await Order.aggregate([
+      previousTotalEarnings = await aggregate([
         { $match: previousOrderFilter },
         { $group: { _id: null, total: { $sum: '$totalAmount' } } }
       ]);
@@ -80,7 +80,7 @@ exports.getDashboardStats = async (req, res) => {
     // Get monthly earnings for the selected period
     let monthlyEarnings = [];
     if (startDate && endDate) {
-      monthlyEarnings = await Order.aggregate([
+      monthlyEarnings = await aggregate([
         { $match: orderFilter },
         {
           $group: {
@@ -96,7 +96,7 @@ exports.getDashboardStats = async (req, res) => {
     } else {
       // Default to current year if no date range specified
       const currentYear = new Date().getFullYear();
-      monthlyEarnings = await Order.aggregate([
+      monthlyEarnings = await aggregate([
         {
           $match: {
             status: 'completed',
@@ -124,7 +124,7 @@ exports.getDashboardStats = async (req, res) => {
       const dayDiff = Math.ceil((end - start) / (1000 * 60 * 60 * 24));
       
       if (dayDiff <= 90) {
-        dailyEarnings = await Order.aggregate([
+        dailyEarnings = await aggregate([
           { $match: orderFilter },
           {
             $group: {
@@ -143,38 +143,38 @@ exports.getDashboardStats = async (req, res) => {
     }
     
     // Get products filtered by category and origin if specified
-    const productsQuery = Product.find(productFilter);
+    const productsQuery = _find(productFilter);
     const totalProducts = await productsQuery.countDocuments();
     
     // Get products by origin (filtered by category if specified)
-    const productsByOrigin = await Product.aggregate([
+    const productsByOrigin = await _aggregate([
       { $match: productFilter },
       { $group: { _id: '$origin', count: { $sum: 1 } } }
     ]);
     
     // Get products by category (filtered by origin if specified)
-    const productsByCategory = await Product.aggregate([
+    const productsByCategory = await _aggregate([
       { $match: productFilter },
       { $group: { _id: '$category', count: { $sum: 1 } } }
     ]);
     
     // Get total orders count (filtered)
-    const totalOrders = await Order.countDocuments(orderFilter);
+    const totalOrders = await countDocuments(orderFilter);
     
     // Get orders by status (filtered)
-    const ordersByStatus = await Order.aggregate([
+    const ordersByStatus = await aggregate([
       { $match: { ...dateFilter } }, // Don't filter by status here
       { $group: { _id: '$status', count: { $sum: 1 } } }
     ]);
     
     // Get recent orders (filtered)
-    const recentOrders = await Order.find(orderFilter)
+    const recentOrders = await find(orderFilter)
       .sort({ createdAt: -1 })
       .limit(10)
       .populate('products.product', 'title price image');
     
     // Get top selling products (filtered)
-    const topSellingProducts = await Order.aggregate([
+    const topSellingProducts = await aggregate([
       { $match: orderFilter },
       { $unwind: '$products' },
       {
@@ -239,12 +239,12 @@ exports.getDashboardStats = async (req, res) => {
       error: error.message
     });
   }
-};
+}
 
 // @desc    Get top selling products
 // @route   GET /api/admin/products/top-selling
 // @access  Private/Admin
-exports.getTopSellingProducts = async (req, res) => {
+export async function getTopSellingProducts(req, res) {
   try {
     const { startDate, endDate, limit = 10, category, origin } = req.query;
     
@@ -262,7 +262,7 @@ exports.getTopSellingProducts = async (req, res) => {
     if (category) productFilter['productDetails.category'] = category;
     if (origin) productFilter['productDetails.origin'] = origin;
     
-    const topSellingProducts = await Order.aggregate([
+    const topSellingProducts = await aggregate([
       { $match: dateFilter },
       { $unwind: '$products' },
       {
@@ -313,12 +313,12 @@ exports.getTopSellingProducts = async (req, res) => {
       error: error.message
     });
   }
-};
+}
 
 // @desc    Get trending products (based on recent orders)
 // @route   GET /api/admin/products/trending
 // @access  Private/Admin
-exports.getTrendingProducts = async (req, res) => {
+export async function getTrendingProducts(req, res) {
   try {
     const { days = 30, limit = 10, category, origin } = req.query;
     
@@ -331,7 +331,7 @@ exports.getTrendingProducts = async (req, res) => {
     if (category) productFilter['productDetails.category'] = category;
     if (origin) productFilter['productDetails.origin'] = origin;
     
-    const trendingProducts = await Order.aggregate([
+    const trendingProducts = await aggregate([
       {
         $match: {
           createdAt: { $gte: daysAgo }
@@ -398,12 +398,12 @@ exports.getTrendingProducts = async (req, res) => {
       error: error.message
     });
   }
-};
+}
 
 // @desc    Get all products with sales data
 // @route   GET /api/admin/products
 // @access  Private/Admin
-exports.getAllProductsWithSales = async (req, res) => {
+export async function getAllProductsWithSales(req, res) {
   try {
     const { 
       page = 1, 
@@ -449,18 +449,18 @@ exports.getAllProductsWithSales = async (req, res) => {
     const skip = (parseInt(page) - 1) * parseInt(limit);
     
     // Get products
-    const products = await Product.find(filter)
+    const products = await _find(filter)
       .sort(sortOptions)
       .skip(skip)
       .limit(parseInt(limit));
     
     // Get total count
-    const total = await Product.countDocuments(filter);
+    const total = await _countDocuments(filter);
     
     // Get sales data for each product
     const productIds = products.map(product => product._id);
     
-    const salesData = await Order.aggregate([
+    const salesData = await aggregate([
       { $match: { status: 'completed' } },
       { $unwind: '$products' },
       {
@@ -504,17 +504,17 @@ exports.getAllProductsWithSales = async (req, res) => {
       error: error.message
     });
   }
-};
+}
 
 // @desc    Update product availability
 // @route   PUT /api/admin/products/:id
 // @access  Private/Admin
-exports.updateProduct = async (req, res) => {
+export async function updateProduct(req, res) {
   try {
     const { id } = req.params;
     const updates = req.body;
 
-    const product = await Product.findByIdAndUpdate(id, updates, {
+    const product = await findByIdAndUpdate(id, updates, {
       new: true,
       runValidators: true
     });
@@ -537,16 +537,16 @@ exports.updateProduct = async (req, res) => {
       error: error.message
     });
   }
-};
+}
 
 // @desc    Delete product
 // @route   DELETE /api/admin/products/:id
 // @access  Private/Admin
-exports.deleteProduct = async (req, res) => {
+export async function deleteProduct(req, res) {
   try {
     const { id } = req.params;
 
-    const product = await Product.findByIdAndDelete(id);
+    const product = await findByIdAndDelete(id);
 
     if (!product) {
       return res.status(404).json({
@@ -566,12 +566,12 @@ exports.deleteProduct = async (req, res) => {
       error: error.message
     });
   }
-};
+}
 
 // @desc    Get sales by region
 // @route   GET /api/admin/analytics/sales-by-region
 // @access  Private/Admin
-exports.getSalesByRegion = async (req, res) => {
+export async function getSalesByRegion(req, res) {
   try {
     const { startDate, endDate } = req.query;
     
@@ -585,7 +585,7 @@ exports.getSalesByRegion = async (req, res) => {
     }
     
     // Get sales by country
-    const salesByCountry = await Order.aggregate([
+    const salesByCountry = await aggregate([
       { $match: dateFilter },
       {
         $group: {
@@ -600,7 +600,7 @@ exports.getSalesByRegion = async (req, res) => {
     // Get sales by state (for top countries)
     const topCountries = salesByCountry.slice(0, 5).map(item => item._id);
     
-    const salesByState = await Order.aggregate([
+    const salesByState = await aggregate([
       { 
         $match: { 
           ...dateFilter,
@@ -631,7 +631,7 @@ exports.getSalesByRegion = async (req, res) => {
       }
     });
     
-    const salesByCity = await Order.aggregate([
+    const salesByCity = await aggregate([
       {
         $match: {
           ...dateFilter,
@@ -670,12 +670,12 @@ exports.getSalesByRegion = async (req, res) => {
       error: error.message
     });
   }
-};
+}
 
 // @desc    Get sales by category
 // @route   GET /api/admin/analytics/sales-by-category
 // @access  Private/Admin
-exports.getSalesByCategory = async (req, res) => {
+export async function getSalesByCategory(req, res) {
   try {
     const { startDate, endDate } = req.query;
     
@@ -689,7 +689,7 @@ exports.getSalesByCategory = async (req, res) => {
     }
     
     // Get sales by category
-    const salesByCategory = await Order.aggregate([
+    const salesByCategory = await aggregate([
       { $match: dateFilter },
       { $unwind: '$products' },
       {
@@ -715,7 +715,7 @@ exports.getSalesByCategory = async (req, res) => {
     // Get sales by subcategory for top categories
     const topCategories = salesByCategory.slice(0, 5).map(item => item._id);
     
-    const salesBySubcategory = await Order.aggregate([
+    const salesBySubcategory = await aggregate([
       { $match: dateFilter },
       { $unwind: '$products' },
       {
@@ -756,12 +756,12 @@ exports.getSalesByCategory = async (req, res) => {
       error: error.message
     });
   }
-};
+}
 
 // @desc    Get customer demographics
 // @route   GET /api/admin/analytics/customer-demographics
 // @access  Private/Admin
-exports.getCustomerDemographics = async (req, res) => {
+export async function getCustomerDemographics(req, res) {
   try {
     const { startDate, endDate } = req.query;
     
@@ -775,7 +775,7 @@ exports.getCustomerDemographics = async (req, res) => {
     }
     
     // Get customers by age group
-    const customersByAgeGroup = await Order.aggregate([
+    const customersByAgeGroup = await aggregate([
       { $match: { ...dateFilter, 'customerDemographics.ageGroup': { $exists: true } } },
       {
         $group: {
@@ -788,7 +788,7 @@ exports.getCustomerDemographics = async (req, res) => {
     ]);
     
     // Get customers by gender
-    const customersByGender = await Order.aggregate([
+    const customersByGender = await aggregate([
       { $match: { ...dateFilter, 'customerDemographics.gender': { $exists: true } } },
       {
         $group: {
@@ -800,7 +800,7 @@ exports.getCustomerDemographics = async (req, res) => {
     ]);
     
     // Get customers by device type
-    const customersByDevice = await Order.aggregate([
+    const customersByDevice = await aggregate([
       { $match: { ...dateFilter, 'deviceInfo.type': { $exists: true } } },
       {
         $group: {
@@ -812,7 +812,7 @@ exports.getCustomerDemographics = async (req, res) => {
     ]);
     
     // Get customers by referral source
-    const customersByReferral = await Order.aggregate([
+    const customersByReferral = await aggregate([
       { $match: { ...dateFilter, 'referralSource': { $exists: true } } },
       {
         $group: {
@@ -840,18 +840,18 @@ exports.getCustomerDemographics = async (req, res) => {
       error: error.message
     });
   }
-};
+}
 
 // @desc    Get sales forecast
 // @route   GET /api/admin/analytics/sales-forecast
 // @access  Private/Admin
-exports.getSalesForecast = async (req, res) => {
+export async function getSalesForecast(req, res) {
   try {
     // Get monthly sales for the last 12 months
     const lastYear = new Date();
     lastYear.setFullYear(lastYear.getFullYear() - 1);
     
-    const monthlySales = await Order.aggregate([
+    const monthlySales = await aggregate([
       {
         $match: {
           status: 'completed',
@@ -930,12 +930,12 @@ exports.getSalesForecast = async (req, res) => {
       error: error.message
     });
   }
-};
+}
 
 // @desc    Get product performance
 // @route   GET /api/admin/analytics/product-performance
 // @access  Private/Admin
-exports.getProductPerformance = async (req, res) => {
+export async function getProductPerformance(req, res) {
   try {
     const { startDate, endDate, category, origin } = req.query;
     
@@ -954,7 +954,7 @@ exports.getProductPerformance = async (req, res) => {
     if (origin) productFilter['productDetails.origin'] = origin;
     
     // Get product performance metrics
-    const productPerformance = await Order.aggregate([
+    const productPerformance = await aggregate([
       { $match: dateFilter },
       { $unwind: '$products' },
       {
@@ -1035,21 +1035,21 @@ exports.getProductPerformance = async (req, res) => {
       error: error.message
     });
   }
-};
+}
 
 // @desc    Get inventory analysis
 // @route   GET /api/admin/analytics/inventory
 // @access  Private/Admin
-exports.getInventoryAnalysis = async (req, res) => {
+export async function getInventoryAnalysis(req, res) {
   try {
     // Get all products with inventory
-    const products = await Product.find().select('id title inventory category origin price');
+    const products = await _find().select('id title inventory category origin price');
     
     // Get sales velocity (average units sold per day) for each product
     const thirtyDaysAgo = new Date();
     thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
     
-    const salesVelocity = await Order.aggregate([
+    const salesVelocity = await aggregate([
       {
         $match: {
           createdAt: { $gte: thirtyDaysAgo },
@@ -1150,15 +1150,15 @@ exports.getInventoryAnalysis = async (req, res) => {
       error: error.message
     });
   }
-};
+}
 
 // @desc    Get customer cohort analysis
 // @route   GET /api/admin/analytics/customer-cohorts
 // @access  Private/Admin
-exports.getCustomerCohortAnalysis = async (req, res) => {
+export async function getCustomerCohortAnalysis(req, res) {
   try {
     // Get all orders
-    const orders = await Order.find()
+    const orders = await find()
       .select('customerEmail totalAmount createdAt')
       .sort('createdAt');
     
@@ -1267,12 +1267,12 @@ exports.getCustomerCohortAnalysis = async (req, res) => {
       error: error.message
     });
   }
-};
+}
 
 // @desc    Export sales data (CSV format)
 // @route   GET /api/admin/export/sales
 // @access  Private/Admin
-exports.exportSalesData = async (req, res) => {
+export async function exportSalesData(req, res) {
   try {
     const { startDate, endDate, category, origin, country } = req.query;
     
@@ -1295,7 +1295,7 @@ exports.exportSalesData = async (req, res) => {
     if (country) orderFilter['shippingAddress.country'] = country;
     
     // Get orders with product details
-    const orders = await Order.aggregate([
+    const orders = await aggregate([
       { $match: orderFilter },
       { $unwind: '$products' },
       {
@@ -1332,11 +1332,11 @@ exports.exportSalesData = async (req, res) => {
     
     // Create a temporary file for CSV
     const timestamp = Date.now();
-    const tempFilePath = path.join(__dirname, `../temp/sales-export-${timestamp}.csv`);
+    const tempFilePath = join(__dirname, `../temp/sales-export-${timestamp}.csv`);
     
     // Ensure temp directory exists
-    if (!fs.existsSync(path.join(__dirname, '../temp'))) {
-      fs.mkdirSync(path.join(__dirname, '../temp'));
+    if (!existsSync(join(__dirname, '../temp'))) {
+      mkdirSync(join(__dirname, '../temp'));
     }
     
     // Create CSV writer
@@ -1380,7 +1380,7 @@ exports.exportSalesData = async (req, res) => {
       }
       
       // Delete temp file after sending
-      fs.unlink(tempFilePath, (unlinkErr) => {
+      unlink(tempFilePath, (unlinkErr) => {
         if (unlinkErr) {
           console.error('Error deleting temp file:', unlinkErr);
         }
@@ -1393,4 +1393,4 @@ exports.exportSalesData = async (req, res) => {
       error: error.message
     });
   }
-};
+}

@@ -1,8 +1,12 @@
-const express = require('express');
-const router = express.Router();
-const { createOrder } = require('../controllers/orderController');
+import { Router } from 'express';
+const router = Router();
+import { createOrder } from '../controllers/orderController';
+
+
+router.get('/track/:id', trackOrder);
 
 // Create new order
 router.post('/', createOrder);
 
-module.exports = router;
+
+export default router;

@@ -1,12 +1,12 @@
-const Product = require('../models/Product');
-const { normalizeProduct } = require('../utils/normalizer');
-const glowroadService = require('../services/glowroadService');
-const spocketService = require('../services/spocketService');
+import { find, countDocuments, findById, findOne, findOneAndUpdate, create } from '../models/Product';
+import { normalizeProduct } from '../utils/normalizer';
+import { getProducts } from '../services/glowroadService';
+import { getProducts as _getProducts } from '../services/spocketService';
 
 // @desc    Get all products
 // @route   GET /api/products
 // @access  Public
-exports.getAllProducts = async (req, res) => {
+export async function getAllProducts(req, res) {
   try {
     const { 
       page = 1, 
@@ -52,13 +52,13 @@ exports.getAllProducts = async (req, res) => {
     const skip = (parseInt(page) - 1) * parseInt(limit);
     
     // Get products
-    const products = await Product.find(query)
+    const products = await find(query)
       .sort(sortOptions)
       .skip(skip)
       .limit(parseInt(limit));
     
     // Get total count
-    const total = await Product.countDocuments(query);
+    const total = await countDocuments(query);
     
     res.status(200).json({
       success: true,
@@ -75,16 +75,16 @@ exports.getAllProducts = async (req, res) => {
       error: error.message
     });
   }
-};
+}
 
 // @desc    Get product by ID
 // @route   GET /api/products/:id
 // @access  Public
-exports.getProductById = async (req, res) => {
+export async function getProductById(req, res) {
   try {
     const { id } = req.params;
     
-    const product = await Product.findById(id);
+    const product = await findById(id);
     
     if (!product) {
       return res.status(404).json({
@@ -104,12 +104,12 @@ exports.getProductById = async (req, res) => {
       error: error.message
     });
   }
-};
+}
 
 // @desc    Search products
 // @route   GET /api/products/search/:query
 // @access  Public
-exports.searchProducts = async (req, res) => {
+export async function searchProducts(req, res) {
   try {
     const { query } = req.params;
     const { page = 1, limit = 20 } = req.query;
@@ -129,13 +129,13 @@ exports.searchProducts = async (req, res) => {
     const skip = (parseInt(page) - 1) * parseInt(limit);
     
     // Get products
-    const products = await Product.find(searchQuery)
+    const products = await find(searchQuery)
       .sort({ rating: -1 })
       .skip(skip)
       .limit(parseInt(limit));
     
     // Get total count
-    const total = await Product.countDocuments(searchQuery);
+    const total = await countDocuments(searchQuery);
     
     res.status(200).json({
       success: true,
@@ -152,12 +152,12 @@ exports.searchProducts = async (req, res) => {
       error: error.message
     });
   }
-};
+}
 
 // @desc    Get products by category
 // @route   GET /api/products/category/:category
 // @access  Public
-exports.getProductsByCategory = async (req, res) => {
+export async function getProductsByCategory(req, res) {
   try {
     const { category } = req.params;
     const { page = 1, limit = 20, sort, order = 'desc' } = req.query;
@@ -179,13 +179,13 @@ exports.getProductsByCategory = async (req, res) => {
     const skip = (parseInt(page) - 1) * parseInt(limit);
     
     // Get products
-    const products = await Product.find(query)
+    const products = await find(query)
       .sort(sortOptions)
       .skip(skip)
       .limit(parseInt(limit));
     
     // Get total count
-    const total = await Product.countDocuments(query);
+    const total = await countDocuments(query);
     
     res.status(200).json({
       success: true,
@@ -202,12 +202,12 @@ exports.getProductsByCategory = async (req, res) => {
       error: error.message
     });
   }
-};
+}
 
 // @desc    Get products by origin
 // @route   GET /api/products/origin/:origin
 // @access  Public
-exports.getProductsByOrigin = async (req, res) => {
+export async function getProductsByOrigin(req, res) {
   try {
     const { origin } = req.params;
     const { page = 1, limit = 20, sort, order = 'desc' } = req.query;
@@ -229,13 +229,13 @@ exports.getProductsByOrigin = async (req, res) => {
     const skip = (parseInt(page) - 1) * parseInt(limit);
     
     // Get products
-    const products = await Product.find(query)
+    const products = await find(query)
       .sort(sortOptions)
       .skip(skip)
       .limit(parseInt(limit));
     
     // Get total count
-    const total = await Product.countDocuments(query);
+    const total = await countDocuments(query);
     
     res.status(200).json({
       success: true,
@@ -252,18 +252,18 @@ exports.getProductsByOrigin = async (req, res) => {
       error: error.message
     });
   }
-};
+}
 
 // @desc    Refresh products from dropshipping APIs
 // @route   GET /api/products/refresh
 // @access  Private/Admin
-exports.refreshProducts = async (req, res) => {
+export async function refreshProducts(req, res) {
   try {
     // Fetch products from GlowRoad (Indian products)
-    const glowroadProducts = await glowroadService.getProducts();
+    const glowroadProducts = await getProducts();
     
     // Fetch products from Spocket (Global products)
-    const spocketProducts = await spocketService.getProducts();
+    const spocketProducts = await _getProducts();
     
     // Normalize products
     const normalizedGlowroadProducts = glowroadProducts.map(product => 
@@ -282,16 +282,16 @@ exports.refreshProducts = async (req, res) => {
     let newCount = 0;
     
     for (const product of allProducts) {
-      const existingProduct = await Product.findOne({ id: product.id });
+      const existingProduct = await findOne({ id: product.id });
       
       if (existingProduct) {
-        await Product.findOneAndUpdate(
+        await findOneAndUpdate(
           { id: product.id },
           { ...product, updatedAt: new Date() }
         );
         updatedCount++;
       } else {
-        await Product.create(product);
+        await create(product);
         newCount++;
       }
     }
@@ -310,4 +310,4 @@ exports.refreshProducts = async (req, res) => {
       error: error.message
     });
   }
-};
+}
