@@ -1,7 +1,7 @@
-import { find, countDocuments, findById, findOne, findOneAndUpdate, create } from '../models/Product.js';
+import Product from '../models/Product.js';
 import { normalizeProduct } from '../utils/normalizer.js';
-import { getProducts } from '../services/glowroadService.js';
-import { getProducts as _getProducts } from '../services/spocketService.js';
+import { getProducts as getGlowroadProducts } from '../services/glowroadService.js';
+import { getProducts as getSpocketProducts } from '../services/spocketService.js';
 
 // @desc    Get all products
 // @route   GET /api/products
@@ -20,10 +20,9 @@ export async function getAllProducts(req, res) {
       maxPrice,
       inStock = 'true'
     } = req.query;
-    
-    // Build query
+
     const query = { isAvailable: true };
-    
+
     if (search) {
       query.$or = [
         { title: { $regex: search, $options: 'i' } },
@@ -32,34 +31,32 @@ export async function getAllProducts(req, res) {
         { tags: { $regex: search, $options: 'i' } }
       ];
     }
-    
+
     if (category) query.category = category;
     if (origin) query.origin = origin;
-    
+
     if (minPrice || maxPrice) {
       query.price = {};
       if (minPrice) query.price.$gte = parseFloat(minPrice);
       if (maxPrice) query.price.$lte = parseFloat(maxPrice);
     }
-    
-    if (inStock === 'true') query.inventory = { $gt: 0 };
-    
-    // Build sort options
+
+    if (inStock === 'true') {
+      query.inventory = { $gt: 0 };
+    }
+
     const sortOptions = {};
     sortOptions[sort] = order === 'desc' ? -1 : 1;
-    
-    // Pagination
+
     const skip = (parseInt(page) - 1) * parseInt(limit);
-    
-    // Get products
-    const products = await find(query)
+
+    const products = await Product.find(query)
       .sort(sortOptions)
       .skip(skip)
       .limit(parseInt(limit));
-    
-    // Get total count
-    const total = await countDocuments(query);
-    
+
+    const total = await Product.countDocuments(query);
+
     res.status(200).json({
       success: true,
       count: products.length,
@@ -83,16 +80,16 @@ export async function getAllProducts(req, res) {
 export async function getProductById(req, res) {
   try {
     const { id } = req.params;
-    
-    const product = await findById(id);
-    
+
+    const product = await Product.findById(id);
+
     if (!product) {
       return res.status(404).json({
         success: false,
         message: 'Product not found'
       });
     }
-    
+
     res.status(200).json({
       success: true,
       data: product
@@ -113,8 +110,7 @@ export async function searchProducts(req, res) {
   try {
     const { query } = req.params;
     const { page = 1, limit = 20 } = req.query;
-    
-    // Build search query
+
     const searchQuery = {
       isAvailable: true,
       $or: [
@@ -124,19 +120,16 @@ export async function searchProducts(req, res) {
         { tags: { $regex: query, $options: 'i' } }
       ]
     };
-    
-    // Pagination
+
     const skip = (parseInt(page) - 1) * parseInt(limit);
-    
-    // Get products
-    const products = await find(searchQuery)
+
+    const products = await Product.find(searchQuery)
       .sort({ rating: -1 })
       .skip(skip)
       .limit(parseInt(limit));
-    
-    // Get total count
-    const total = await countDocuments(searchQuery);
-    
+
+    const total = await Product.countDocuments(searchQuery);
+
     res.status(200).json({
       success: true,
       count: products.length,
@@ -161,32 +154,22 @@ export async function getProductsByCategory(req, res) {
   try {
     const { category } = req.params;
     const { page = 1, limit = 20, sort, order = 'desc' } = req.query;
-    
-    // Build query
+
     const query = { category, isAvailable: true };
-    
-    // Build sort options
+
     let sortOptions = { createdAt: -1 };
-    if (sort === 'price' && order === 'asc') {
-      sortOptions = { price: 1 };
-    } else if (sort === 'price' && order === 'desc') {
-      sortOptions = { price: -1 };
-    } else if (sort === 'rating') {
-      sortOptions = { rating: -1 };
-    }
-    
-    // Pagination
+    if (sort === 'price') sortOptions = { price: order === 'asc' ? 1 : -1 };
+    if (sort === 'rating') sortOptions = { rating: -1 };
+
     const skip = (parseInt(page) - 1) * parseInt(limit);
-    
-    // Get products
-    const products = await find(query)
+
+    const products = await Product.find(query)
       .sort(sortOptions)
       .skip(skip)
       .limit(parseInt(limit));
-    
-    // Get total count
-    const total = await countDocuments(query);
-    
+
+    const total = await Product.countDocuments(query);
+
     res.status(200).json({
       success: true,
       count: products.length,
@@ -211,32 +194,22 @@ export async function getProductsByOrigin(req, res) {
   try {
     const { origin } = req.params;
     const { page = 1, limit = 20, sort, order = 'desc' } = req.query;
-    
-    // Build query
+
     const query = { origin, isAvailable: true };
-    
-    // Build sort options
+
     let sortOptions = { createdAt: -1 };
-    if (sort === 'price' && order === 'asc') {
-      sortOptions = { price: 1 };
-    } else if (sort === 'price' && order === 'desc') {
-      sortOptions = { price: -1 };
-    } else if (sort === 'rating') {
-      sortOptions = { rating: -1 };
-    }
-    
-    // Pagination
+    if (sort === 'price') sortOptions = { price: order === 'asc' ? 1 : -1 };
+    if (sort === 'rating') sortOptions = { rating: -1 };
+
     const skip = (parseInt(page) - 1) * parseInt(limit);
-    
-    // Get products
-    const products = await find(query)
+
+    const products = await Product.find(query)
       .sort(sortOptions)
       .skip(skip)
       .limit(parseInt(limit));
-    
-    // Get total count
-    const total = await countDocuments(query);
-    
+
+    const total = await Product.countDocuments(query);
+
     res.status(200).json({
       success: true,
       count: products.length,
@@ -259,43 +232,37 @@ export async function getProductsByOrigin(req, res) {
 // @access  Private/Admin
 export async function refreshProducts(req, res) {
   try {
-    // Fetch products from GlowRoad (Indian products)
-    const glowroadProducts = await getProducts();
-    
-    // Fetch products from Spocket (Global products)
-    const spocketProducts = await _getProducts();
-    
-    // Normalize products
-    const normalizedGlowroadProducts = glowroadProducts.map(product => 
+    const glowroadProducts = await getGlowroadProducts();
+    const spocketProducts = await getSpocketProducts();
+
+    const normalizedGlowroad = glowroadProducts.map(product =>
       normalizeProduct(product, 'GlowRoad', 'India')
     );
-    
-    const normalizedSpocketProducts = spocketProducts.map(product => 
+
+    const normalizedSpocket = spocketProducts.map(product =>
       normalizeProduct(product, 'Spocket', 'Global')
     );
-    
-    // Combine products
-    const allProducts = [...normalizedGlowroadProducts, ...normalizedSpocketProducts];
-    
-    // Update or insert products in database
+
+    const allProducts = [...normalizedGlowroad, ...normalizedSpocket];
+
     let updatedCount = 0;
     let newCount = 0;
-    
+
     for (const product of allProducts) {
-      const existingProduct = await findOne({ id: product.id });
-      
-      if (existingProduct) {
-        await findOneAndUpdate(
+      const existing = await Product.findOne({ id: product.id });
+
+      if (existing) {
+        await Product.findOneAndUpdate(
           { id: product.id },
           { ...product, updatedAt: new Date() }
         );
         updatedCount++;
       } else {
-        await create(product);
+        await Product.create(product);
         newCount++;
       }
     }
-    
+
     res.status(200).json({
       success: true,
       message: 'Products refreshed successfully',

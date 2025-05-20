@@ -1,5 +1,5 @@
 import { findOne, create } from '../models/Cart.js';
-import { findById } from '../models/Product.js';
+import findById from '../models/Product.js';
 
 // @desc    Get user cart
 // @route   GET /api/cart

@@ -1,7 +1,10 @@
-import { sign } from 'jsonwebtoken';
+import jsonwebtoken from 'jsonwebtoken';
 import { createHash } from 'crypto';
 import { createTransport } from 'nodemailer';
-import { findOne, create, findById } from '../models/Admin.js';
+import Admin from '../models/Admin.js';  // Import default Admin model
+
+const { sign } = jsonwebtoken;
+
 
 // Generate JWT Token
 const generateToken = (id) => {
@@ -17,7 +20,6 @@ export async function loginAdmin(req, res) {
   try {
     const { username, password } = req.body;
 
-    // Validate input
     if (!username || !password) {
       return res.status(400).json({
         success: false,
@@ -25,8 +27,8 @@ export async function loginAdmin(req, res) {
       });
     }
 
-    // Check if admin exists
-    const admin = await findOne({ username });
+    // Use Admin model methods
+    const admin = await Admin.findOne({ username });
     if (!admin) {
       return res.status(401).json({
         success: false,
@@ -34,7 +36,6 @@ export async function loginAdmin(req, res) {
       });
     }
 
-    // Check if password matches
     const isMatch = await admin.matchPassword(password);
     if (!isMatch) {
       return res.status(401).json({
@@ -43,11 +44,9 @@ export async function loginAdmin(req, res) {
       });
     }
 
-    // Update last login
     admin.lastLogin = Date.now();
     await admin.save();
 
-    // Generate token
     const token = generateToken(admin._id);
 
     res.status(200).json({
@@ -76,8 +75,8 @@ export async function registerAdmin(req, res) {
   try {
     const { username, password, email, role } = req.body;
 
-    // Create admin
-    const admin = await create({
+    // Use Admin.create to create a new admin document
+    const admin = await Admin.create({
       username,
       password,
       email,
@@ -108,8 +107,8 @@ export async function registerAdmin(req, res) {
 // @access  Private
 export async function getAdminProfile(req, res) {
   try {
-    const admin = await findById(req.admin.id).select('-password');
-    
+    const admin = await Admin.findById(req.admin.id).select('-password');
+
     res.status(200).json({
       success: true,
       admin
@@ -137,8 +136,7 @@ export async function generateLoginOTP(req, res) {
       });
     }
 
-    // Find admin by email
-    const admin = await findOne({ email });
+    const admin = await Admin.findOne({ email });
     if (!admin) {
       return res.status(404).json({
         success: false,
@@ -146,21 +144,14 @@ export async function generateLoginOTP(req, res) {
       });
     }
 
-    // Generate a 6-digit OTP
     const otp = Math.floor(100000 + Math.random() * 900000).toString();
-    
-    // Hash the OTP
     const otpHash = createHash('sha256').update(otp).digest('hex');
-    
-    // Set OTP expiry (10 minutes)
     const otpExpiry = Date.now() + 10 * 60 * 1000;
-    
-    // Save OTP to admin document
+
     admin.otpHash = otpHash;
     admin.otpExpiry = otpExpiry;
     await admin.save();
 
-    // Send OTP via email
     const transporter = createTransport({
       service: process.env.EMAIL_SERVICE,
       auth: {
@@ -214,8 +205,7 @@ export async function verifyLoginOTP(req, res) {
       });
     }
 
-    // Find admin by email
-    const admin = await findOne({ email });
+    const admin = await Admin.findOne({ email });
     if (!admin) {
       return res.status(404).json({
         success: false,
@@ -223,7 +213,6 @@ export async function verifyLoginOTP(req, res) {
       });
     }
 
-    // Check if OTP exists and is not expired
     if (!admin.otpHash || !admin.otpExpiry) {
       return res.status(400).json({
         success: false,
@@ -232,18 +221,16 @@ export async function verifyLoginOTP(req, res) {
     }
 
     if (Date.now() > admin.otpExpiry) {
-      // Clear expired OTP
       admin.otpHash = undefined;
       admin.otpExpiry = undefined;
       await admin.save();
-      
+
       return res.status(400).json({
         success: false,
         message: 'OTP has expired. Please request a new one'
       });
     }
 
-    // Verify OTP
     const hashedOTP = createHash('sha256').update(otp).digest('hex');
     if (hashedOTP !== admin.otpHash) {
       return res.status(401).json({
@@ -252,15 +239,11 @@ export async function verifyLoginOTP(req, res) {
       });
     }
 
-    // Clear used OTP
     admin.otpHash = undefined;
     admin.otpExpiry = undefined;
-    
-    // Update last login
     admin.lastLogin = Date.now();
     await admin.save();
 
-    // Generate token
     const token = generateToken(admin._id);
 
     res.status(200).json({

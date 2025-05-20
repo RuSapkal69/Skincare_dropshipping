@@ -1,10 +1,20 @@
-import { aggregate, countDocuments, find } from '../models/Order.js';
-import { find as _find, aggregate as _aggregate, countDocuments as _countDocuments, findByIdAndUpdate, findByIdAndDelete } from '../models/Product.js';
+import Order from '../models/Order.js';
+import Product from '../models/Product.js';
 import mongoose from 'mongoose';
 import moment from 'moment';
 import { createObjectCsvWriter } from 'csv-writer';
 import { existsSync, mkdirSync, unlink } from 'fs';
 import { join } from 'path';
+import { fileURLToPath } from 'url';
+import { dirname } from 'path';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
+
+const ordersCount = await Order.countDocuments(query);
+const orders = await Order.find(query);
+const aggregatedData = await Order.aggregate(pipeline);
+
 
 // @desc    Get dashboard stats
 // @route   GET /api/admin/stats
@@ -143,17 +153,17 @@ export async function getDashboardStats(req, res) {
     }
     
     // Get products filtered by category and origin if specified
-    const productsQuery = _find(productFilter);
-    const totalProducts = await productsQuery.countDocuments();
+    const productsQuery = Product.find(productFilter);
+    const totalProducts = await Product.countDocuments(productFilter);
     
     // Get products by origin (filtered by category if specified)
-    const productsByOrigin = await _aggregate([
+    const productsByOrigin = await Product.aggregate([
       { $match: productFilter },
       { $group: { _id: '$origin', count: { $sum: 1 } } }
     ]);
     
     // Get products by category (filtered by origin if specified)
-    const productsByCategory = await _aggregate([
+    const productsByCategory = await Product.aggregate([
       { $match: productFilter },
       { $group: { _id: '$category', count: { $sum: 1 } } }
     ]);
@@ -449,13 +459,13 @@ export async function getAllProductsWithSales(req, res) {
     const skip = (parseInt(page) - 1) * parseInt(limit);
     
     // Get products
-    const products = await _find(filter)
+    const products = await Product.find(filter)
       .sort(sortOptions)
       .skip(skip)
       .limit(parseInt(limit));
     
     // Get total count
-    const total = await _countDocuments(filter);
+    const total = await Product.countDocuments(filter);
     
     // Get sales data for each product
     const productIds = products.map(product => product._id);
@@ -514,7 +524,7 @@ export async function updateProduct(req, res) {
     const { id } = req.params;
     const updates = req.body;
 
-    const product = await findByIdAndUpdate(id, updates, {
+    const product = await Product.findByIdAndUpdate(id, updates, {
       new: true,
       runValidators: true
     });
@@ -546,7 +556,7 @@ export async function deleteProduct(req, res) {
   try {
     const { id } = req.params;
 
-    const product = await findByIdAndDelete(id);
+    const product = await Product.findByIdAndDelete(id);
 
     if (!product) {
       return res.status(404).json({
@@ -1043,7 +1053,7 @@ export async function getProductPerformance(req, res) {
 export async function getInventoryAnalysis(req, res) {
   try {
     // Get all products with inventory
-    const products = await _find().select('id title inventory category origin price');
+    const products = await Product.find().select('id title inventory category origin price');
     
     // Get sales velocity (average units sold per day) for each product
     const thirtyDaysAgo = new Date();
