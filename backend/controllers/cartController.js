@@ -1,17 +1,17 @@
-import { findOne, create } from '../models/Cart.js';
-import findById from '../models/Product.js';
+import Cart from '../models/Cart.js';
+import Product from '../models/Product.js';
 
 // @desc    Get user cart
 // @route   GET /api/cart
 // @access  Private
 export async function getCart(req, res) {
   try {
-    let cart = await findOne({ user: req.user.id })
+    let cart = await Cart.findOne({ user: req.user.id })
       .populate('items.product', 'title price image inventory isAvailable');
     
     if (!cart) {
       // Create cart if it doesn't exist
-      cart = await create({
+      cart = await Cart.create({
         user: req.user.id,
         items: []
       });
@@ -47,7 +47,7 @@ export async function addToCart(req, res) {
     const { productId, quantity = 1 } = req.body;
     
     // Validate product
-    const product = await findById(productId);
+    const product = await Product.findById(productId);
     
     if (!product) {
       return res.status(404).json({
@@ -71,11 +71,11 @@ export async function addToCart(req, res) {
     }
     
     // Find user's cart
-    let cart = await findOne({ user: req.user.id });
+    let cart = await Cart.findOne({ user: req.user.id });
     
     if (!cart) {
       // Create cart if it doesn't exist
-      cart = await create({
+      cart = await Cart.create({
         user: req.user.id,
         items: []
       });
@@ -100,7 +100,7 @@ export async function addToCart(req, res) {
     await cart.save();
     
     // Get updated cart with populated products
-    cart = await findOne({ user: req.user.id })
+    cart = await Cart.findOne({ user: req.user.id })
       .populate('items.product', 'title price image inventory isAvailable');
     
     // Calculate total
@@ -141,7 +141,7 @@ export async function updateCartItem(req, res) {
     }
     
     // Validate product
-    const product = await findById(productId);
+    const product = await Product.findById(productId);
     
     if (!product) {
       return res.status(404).json({
@@ -158,7 +158,7 @@ export async function updateCartItem(req, res) {
     }
     
     // Find user's cart
-    let cart = await findOne({ user: req.user.id });
+    let cart = await Cart.findOne({ user: req.user.id });
     
     if (!cart) {
       return res.status(404).json({
@@ -184,7 +184,7 @@ export async function updateCartItem(req, res) {
     await cart.save();
     
     // Get updated cart with populated products
-    cart = await findOne({ user: req.user.id })
+    cart = await Cart.findOne({ user: req.user.id })
       .populate('items.product', 'title price image inventory isAvailable');
     
     // Calculate total
@@ -217,7 +217,7 @@ export async function removeCartItem(req, res) {
     const { productId } = req.params;
     
     // Find user's cart
-    let cart = await findOne({ user: req.user.id });
+    let cart = await Cart.findOne({ user: req.user.id });
     
     if (!cart) {
       return res.status(404).json({
@@ -234,7 +234,7 @@ export async function removeCartItem(req, res) {
     await cart.save();
     
     // Get updated cart with populated products
-    cart = await findOne({ user: req.user.id })
+    cart = await Cart.findOne({ user: req.user.id })
       .populate('items.product', 'title price image inventory isAvailable');
     
     // Calculate total
@@ -265,7 +265,7 @@ export async function removeCartItem(req, res) {
 export async function clearCart(req, res) {
   try {
     // Find user's cart
-    const cart = await findOne({ user: req.user.id });
+    const cart = await Cart.findOne({ user: req.user.id });
     
     if (!cart) {
       return res.status(404).json({

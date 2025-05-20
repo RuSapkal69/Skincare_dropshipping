@@ -1,31 +1,31 @@
 import { Routes, Route, Navigate } from "react-router-dom"
-import ClientLayout from "./client/ClientLayout"
-import AdminLayout from "./admin/AdminLayout"
-import AdminLogin from "./admin/pages/Login"
+import ClientLayout from "./client/src/ClientLayout"
+import AdminLayout from "./admin/src/AdminLayout"
+import AdminLogin from "./admin/src/pages/Login"
 import { ToastContainer } from "react-toastify"
 import "react-toastify/dist/ReactToastify.css"
 
 // Client Pages
-import Home from "./client/pages/Home"
-import ProductDetail from "./client/pages/ProductDetail"
-import Cart from "./client/pages/Cart"
-import Checkout from "./client/pages/Checkout"
-import Login from "./client/pages/Login"
-import Register from "./client/pages/Register"
-import UserProfile from "./client/pages/UserProfile"
-import OrderHistory from "./client/pages/OrderHistory"
-import OrderDetail from "./client/pages/OrderDetail"
+import Home from "./client/src/pages/Home"
+import ProductDetail from "./client/src/pages/ProductDetail"
+import Cart from "./client/src/pages/Cart"
+// import Checkout from "./client/src/pages/Checkout"
+import Login from "./client/src/pages/Login"
+import Register from "./client/src/pages/Register"
+// import UserProfile from "./client/src/pages/UserProfile"
+// import OrderHistory from "./client/src/pages/OrderHistory"
+// import OrderDetail from "./client/src/pages/OrderDetail"
 
 // Admin Pages
-import Dashboard from "./admin/pages/Dashboard"
-import Products from "./admin/pages/Products"
-import Orders from "./admin/pages/Orders"
-import Analytics from "./admin/pages/Analytics"
-import Settings from "./admin/pages/Settings"
-import Profile from "./admin/pages/Profile"
+import Dashboard from "./admin/src/pages/Dashboard"
+import Products from "./admin/src/pages/Products"
+import Orders from "./admin/src/pages/Orders"
+import Analytics from "./admin/src/pages/Analytics"
+import Settings from "./admin/src/pages/Settings"
+import Profile from "./admin/src/pages/Profile"
 
 // Auth Provider for Admin
-import { AuthProvider } from "./admin/context/AuthContext"
+import { AuthProvider } from "./admin/src/context/AuthContext"
 
 const App = () => {
   return (

@@ -4,7 +4,8 @@ import { ResponsiveChoropleth } from '@nivo/geo';
 import { ComposableMap, Geographies, Geography } from 'react-simple-maps';
 import Card from '../common/Card';
 import { formatCurrency } from '../../utils/formatters';
-import worldGeoData from '../../assets/data/world-countries.json';
+// import worldGeoData from "../../../assets/data/world-countries.json";
+
 
 const WorldMapChart = ({ data, loading }) => {
   const [selectedCountry, setSelectedCountry] = useState(null);

@@ -11,9 +11,9 @@ import { dirname } from 'path';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
-const ordersCount = await Order.countDocuments(query);
-const orders = await Order.find(query);
-const aggregatedData = await Order.aggregate(pipeline);
+// const ordersCount = await Order.countDocuments(query);
+// const orders = await Order.find(query);
+// const aggregatedData = await Order.aggregate(pipeline);
 
 
 // @desc    Get dashboard stats
@@ -73,7 +73,7 @@ export async function getDashboardStats(req, res) {
     if (country) previousOrderFilter['shippingAddress.country'] = country;
     
     // Get total earnings for current period
-    const totalEarnings = await aggregate([
+    const totalEarnings = await Order.aggregate([
       { $match: orderFilter },
       { $group: { _id: null, total: { $sum: '$totalAmount' } } }
     ]);
@@ -81,7 +81,7 @@ export async function getDashboardStats(req, res) {
     // Get total earnings for previous period if requested
     let previousTotalEarnings = [];
     if (compareWithPrevious === 'true') {
-      previousTotalEarnings = await aggregate([
+      previousTotalEarnings = await Order.aggregate([
         { $match: previousOrderFilter },
         { $group: { _id: null, total: { $sum: '$totalAmount' } } }
       ]);
@@ -90,7 +90,7 @@ export async function getDashboardStats(req, res) {
     // Get monthly earnings for the selected period
     let monthlyEarnings = [];
     if (startDate && endDate) {
-      monthlyEarnings = await aggregate([
+      monthlyEarnings = await Order.aggregate([
         { $match: orderFilter },
         {
           $group: {
@@ -106,7 +106,7 @@ export async function getDashboardStats(req, res) {
     } else {
       // Default to current year if no date range specified
       const currentYear = new Date().getFullYear();
-      monthlyEarnings = await aggregate([
+      monthlyEarnings = await Order.aggregate([
         {
           $match: {
             status: 'completed',
@@ -134,7 +134,7 @@ export async function getDashboardStats(req, res) {
       const dayDiff = Math.ceil((end - start) / (1000 * 60 * 60 * 24));
       
       if (dayDiff <= 90) {
-        dailyEarnings = await aggregate([
+        dailyEarnings = await Order.aggregate([
           { $match: orderFilter },
           {
             $group: {
@@ -169,22 +169,22 @@ export async function getDashboardStats(req, res) {
     ]);
     
     // Get total orders count (filtered)
-    const totalOrders = await countDocuments(orderFilter);
+    const totalOrders = await Order.countDocuments(orderFilter);
     
     // Get orders by status (filtered)
-    const ordersByStatus = await aggregate([
+    const ordersByStatus = await Order.aggregate([
       { $match: { ...dateFilter } }, // Don't filter by status here
       { $group: { _id: '$status', count: { $sum: 1 } } }
     ]);
     
     // Get recent orders (filtered)
-    const recentOrders = await find(orderFilter)
+    const recentOrders = await Order.find(orderFilter)
       .sort({ createdAt: -1 })
       .limit(10)
       .populate('products.product', 'title price image');
     
     // Get top selling products (filtered)
-    const topSellingProducts = await aggregate([
+    const topSellingProducts = await Product.aggregate([
       { $match: orderFilter },
       { $unwind: '$products' },
       {
@@ -272,7 +272,7 @@ export async function getTopSellingProducts(req, res) {
     if (category) productFilter['productDetails.category'] = category;
     if (origin) productFilter['productDetails.origin'] = origin;
     
-    const topSellingProducts = await aggregate([
+    const topSellingProducts = await Product.aggregate([
       { $match: dateFilter },
       { $unwind: '$products' },
       {
@@ -341,7 +341,7 @@ export async function getTrendingProducts(req, res) {
     if (category) productFilter['productDetails.category'] = category;
     if (origin) productFilter['productDetails.origin'] = origin;
     
-    const trendingProducts = await aggregate([
+    const trendingProducts = await Product.aggregate([
       {
         $match: {
           createdAt: { $gte: daysAgo }
@@ -470,7 +470,7 @@ export async function getAllProductsWithSales(req, res) {
     // Get sales data for each product
     const productIds = products.map(product => product._id);
     
-    const salesData = await aggregate([
+    const salesData = await Product.aggregate([
       { $match: { status: 'completed' } },
       { $unwind: '$products' },
       {
@@ -595,7 +595,7 @@ export async function getSalesByRegion(req, res) {
     }
     
     // Get sales by country
-    const salesByCountry = await aggregate([
+    const salesByCountry = await Order.aggregate([
       { $match: dateFilter },
       {
         $group: {
@@ -610,7 +610,7 @@ export async function getSalesByRegion(req, res) {
     // Get sales by state (for top countries)
     const topCountries = salesByCountry.slice(0, 5).map(item => item._id);
     
-    const salesByState = await aggregate([
+    const salesByState = await Order.aggregate([
       { 
         $match: { 
           ...dateFilter,
@@ -641,7 +641,7 @@ export async function getSalesByRegion(req, res) {
       }
     });
     
-    const salesByCity = await aggregate([
+    const salesByCity = await Order.aggregate([
       {
         $match: {
           ...dateFilter,
@@ -699,7 +699,7 @@ export async function getSalesByCategory(req, res) {
     }
     
     // Get sales by category
-    const salesByCategory = await aggregate([
+    const salesByCategory = await Order.aggregate([
       { $match: dateFilter },
       { $unwind: '$products' },
       {
@@ -725,7 +725,7 @@ export async function getSalesByCategory(req, res) {
     // Get sales by subcategory for top categories
     const topCategories = salesByCategory.slice(0, 5).map(item => item._id);
     
-    const salesBySubcategory = await aggregate([
+    const salesBySubcategory = await Order.aggregate([
       { $match: dateFilter },
       { $unwind: '$products' },
       {
@@ -785,7 +785,7 @@ export async function getCustomerDemographics(req, res) {
     }
     
     // Get customers by age group
-    const customersByAgeGroup = await aggregate([
+    const customersByAgeGroup = await Order.aggregate([
       { $match: { ...dateFilter, 'customerDemographics.ageGroup': { $exists: true } } },
       {
         $group: {
@@ -798,7 +798,7 @@ export async function getCustomerDemographics(req, res) {
     ]);
     
     // Get customers by gender
-    const customersByGender = await aggregate([
+    const customersByGender = await Order.aggregate([
       { $match: { ...dateFilter, 'customerDemographics.gender': { $exists: true } } },
       {
         $group: {
@@ -810,7 +810,7 @@ export async function getCustomerDemographics(req, res) {
     ]);
     
     // Get customers by device type
-    const customersByDevice = await aggregate([
+    const customersByDevice = await Order.aggregate([
       { $match: { ...dateFilter, 'deviceInfo.type': { $exists: true } } },
       {
         $group: {
@@ -822,7 +822,7 @@ export async function getCustomerDemographics(req, res) {
     ]);
     
     // Get customers by referral source
-    const customersByReferral = await aggregate([
+    const customersByReferral = await Order.aggregate([
       { $match: { ...dateFilter, 'referralSource': { $exists: true } } },
       {
         $group: {
@@ -861,7 +861,7 @@ export async function getSalesForecast(req, res) {
     const lastYear = new Date();
     lastYear.setFullYear(lastYear.getFullYear() - 1);
     
-    const monthlySales = await aggregate([
+    const monthlySales = await Order.aggregate([
       {
         $match: {
           status: 'completed',
@@ -964,7 +964,7 @@ export async function getProductPerformance(req, res) {
     if (origin) productFilter['productDetails.origin'] = origin;
     
     // Get product performance metrics
-    const productPerformance = await aggregate([
+    const productPerformance = await Product.aggregate([
       { $match: dateFilter },
       { $unwind: '$products' },
       {
@@ -1059,7 +1059,7 @@ export async function getInventoryAnalysis(req, res) {
     const thirtyDaysAgo = new Date();
     thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
     
-    const salesVelocity = await aggregate([
+    const salesVelocity = await Product.aggregate([
       {
         $match: {
           createdAt: { $gte: thirtyDaysAgo },
@@ -1168,7 +1168,7 @@ export async function getInventoryAnalysis(req, res) {
 export async function getCustomerCohortAnalysis(req, res) {
   try {
     // Get all orders
-    const orders = await find()
+    const orders = await Order.find()
       .select('customerEmail totalAmount createdAt')
       .sort('createdAt');
     
@@ -1305,7 +1305,7 @@ export async function exportSalesData(req, res) {
     if (country) orderFilter['shippingAddress.country'] = country;
     
     // Get orders with product details
-    const orders = await aggregate([
+    const orders = await Order.aggregate([
       { $match: orderFilter },
       { $unwind: '$products' },
       {

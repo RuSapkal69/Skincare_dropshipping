@@ -1,9 +1,11 @@
-import { findOne, create, findById, findByIdAndUpdate } from '../models/User.js';
-import { create as _create } from '../models/Cart.js';
-import { find, findById as _findById } from '../models/Order.js';
-import { sign } from 'jsonwebtoken';
+import User from '../models/User.js';
+import Cart from '../models/Cart.js';
+import Order from '../models/Order.js';
+import jwt from 'jsonwebtoken';
 import { createHash } from 'crypto';
 import { createTransport } from 'nodemailer';
+
+const { sign } = jwt;
 
 // Generate JWT Token
 const generateToken = (id) => {
@@ -20,7 +22,7 @@ export async function registerUser(req, res) {
     const { firstName, lastName, email, password, phone } = req.body;
 
     // Check if user already exists
-    const userExists = await findOne({ email });
+    const userExists = await User.findOne({ email });
     if (userExists) {
       return res.status(400).json({
         success: false,
@@ -29,7 +31,7 @@ export async function registerUser(req, res) {
     }
 
     // Create user
-    const user = await create({
+    const user = await User.create({
       firstName,
       lastName,
       email,
@@ -38,7 +40,7 @@ export async function registerUser(req, res) {
     });
 
     // Generate verification token
-    const verificationToken = user.getVerificationToken();
+    const verificationToken = user.verificationToken();
     await user.save();
 
     // Send verification email
@@ -69,7 +71,7 @@ export async function registerUser(req, res) {
     await transporter.sendMail(mailOptions);
 
     // Create empty cart for user
-    await _create({ user: user._id, items: [] });
+    await Cart.create({ user: user._id, items: [] });
 
     // Generate token
     const token = generateToken(user._id);
@@ -111,7 +113,7 @@ export async function loginUser(req, res) {
     }
 
     // Check if user exists
-    const user = await findOne({ email }).select('+password');
+    const user = await User.findOne({ email }).select('+password');
     if (!user) {
       return res.status(401).json({
         success: false,
@@ -168,7 +170,7 @@ export async function verifyEmail(req, res) {
       .digest('hex');
     
     // Find user by token
-    const user = await findOne({ verificationToken });
+    const user = await User.findOne({ verificationToken });
     
     if (!user) {
       return res.status(400).json({
@@ -203,7 +205,7 @@ export async function forgotPassword(req, res) {
     const { email } = req.body;
     
     // Find user by email
-    const user = await findOne({ email });
+    const user = await User.findOne({ email });
     
     if (!user) {
       return res.status(404).json({
@@ -213,7 +215,7 @@ export async function forgotPassword(req, res) {
     }
     
     // Generate reset token
-    const resetToken = user.getResetPasswordToken();
+    const resetToken = user.resetPasswordToken();
     await user.save();
     
     // Create reset URL
@@ -272,7 +274,7 @@ export async function resetPassword(req, res) {
       .digest('hex');
     
     // Find user by token and check if token is expired
-    const user = await findOne({
+    const user = await User.findOne({
       resetPasswordToken,
       resetPasswordExpire: { $gt: Date.now() }
     });
@@ -308,7 +310,7 @@ export async function resetPassword(req, res) {
 // @access  Private
 export async function getUserProfile(req, res) {
   try {
-    const user = await findById(req.user.id);
+    const user = await User.findById(req.user.id);
     
     if (!user) {
       return res.status(404).json({
@@ -356,7 +358,7 @@ export async function updateUserProfile(req, res) {
     if (phone) updateFields.phone = phone;
     if (demographics) updateFields.demographics = demographics;
     
-    const user = await findByIdAndUpdate(
+    const user = await User.findByIdAndUpdate(
       req.user.id,
       updateFields,
       { new: true, runValidators: true }
@@ -397,7 +399,7 @@ export async function addAddress(req, res) {
   try {
     const { addressType, street, city, state, postalCode, country, isDefault } = req.body;
     
-    const user = await findById(req.user.id);
+    const user = await User.findById(req.user.id);
     
     if (!user) {
       return res.status(404).json({
@@ -448,7 +450,7 @@ export async function updateAddress(req, res) {
   try {
     const { addressType, street, city, state, postalCode, country, isDefault } = req.body;
     
-    const user = await findById(req.user.id);
+    const user = await User.findById(req.user.id);
     
     if (!user) {
       return res.status(404).json({
@@ -503,7 +505,7 @@ export async function updateAddress(req, res) {
 // @access  Private
 export async function deleteAddress(req, res) {
   try {
-    const user = await findById(req.user.id);
+    const user = await User.findById(req.user.id);
     
     if (!user) {
       return res.status(404).json({
@@ -544,7 +546,7 @@ export async function deleteAddress(req, res) {
 // @access  Private
 export async function getUserOrders(req, res) {
   try {
-    const orders = await find({ customerEmail: req.user.email })
+    const orders = await Order.find({ customerEmail: req.user.email })
       .sort({ createdAt: -1 })
       .populate('products.product', 'title price image');
     
@@ -567,7 +569,7 @@ export async function getUserOrders(req, res) {
 // @access  Private
 export async function getUserOrderDetails(req, res) {
   try {
-    const order = await _findById(req.params.id)
+    const order = await Order.findById(req.params.id)
       .populate('products.product', 'title price image description');
     
     if (!order) {
@@ -605,7 +607,7 @@ export async function addToWishlist(req, res) {
   try {
     const { productId } = req.body;
     
-    const user = await findById(req.user.id);
+    const user = await User.findById(req.user.id);
     
     if (!user) {
       return res.status(404).json({
@@ -627,7 +629,7 @@ export async function addToWishlist(req, res) {
     await user.save();
     
     // Get populated wishlist
-    const populatedUser = await findById(req.user.id)
+    const populatedUser = await User.findById(req.user.id)
       .populate('wishlist', 'title price image');
     
     res.status(200).json({
@@ -650,7 +652,7 @@ export async function removeFromWishlist(req, res) {
   try {
     const { productId } = req.params;
     
-    const user = await findById(req.user.id);
+    const user = await User.findById(req.user.id);
     
     if (!user) {
       return res.status(404).json({
@@ -667,7 +669,7 @@ export async function removeFromWishlist(req, res) {
     await user.save();
     
     // Get populated wishlist
-    const populatedUser = await findById(req.user.id)
+    const populatedUser = await User.findById(req.user.id)
       .populate('wishlist', 'title price image');
     
     res.status(200).json({
@@ -688,7 +690,7 @@ export async function removeFromWishlist(req, res) {
 // @access  Private
 export async function getWishlist(req, res) {
   try {
-    const user = await findById(req.user.id)
+    const user = await User.findById(req.user.id)
       .populate('wishlist', 'title price image description');
     
     if (!user) {
