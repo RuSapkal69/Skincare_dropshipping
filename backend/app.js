@@ -6,6 +6,14 @@ import rateLimit from 'express-rate-limit';
 import connectDB from './config/db.js';
 import { config } from 'dotenv';
 
+import productRoutes from './routes/productRoutes.js';
+import orderRoutes from './routes/orderRoutes.js';
+import adminRoutes from './routes/adminRoutes.js';
+import userRoutes from './routes/userRoutes.js';
+import cartRoutes from './routes/cartRoutes.js';
+
+
+
 // Load env vars
 config();
 
@@ -31,11 +39,11 @@ app.use(cors());
 app.use(morgan('dev'));
 
 // Routes
-app.use('/api/products', require('./routes/productRoutes'));
-app.use('/api/orders', require('./routes/orderRoutes').default);
-app.use('/api/admin', require('./routes/adminRoutes'));
-app.use('/api/users', require('./routes/userRoutes'));
-app.use('/api/cart', require('./routes/cartRoutes'));
+app.use('/api/products', productRoutes);
+app.use('/api/orders', orderRoutes);
+app.use('/api/admin', adminRoutes);
+app.use('/api/users', userRoutes);
+app.use('/api/cart', cartRoutes);
 
 // Health check route
 app.get('/health', (req, res) => {
