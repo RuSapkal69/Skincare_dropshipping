@@ -1,5 +1,5 @@
 import { aggregate, countDocuments, find } from '../models/Order.js';
-import { find as _find, aggregate as _aggregate, countDocuments as _countDocuments, findByIdAndUpdate, findByIdAndDelete } from '../models/Product';
+import { find as _find, aggregate as _aggregate, countDocuments as _countDocuments, findByIdAndUpdate, findByIdAndDelete } from '../models/Product.js';
 import mongoose from 'mongoose';
 import moment from 'moment';
 import { createObjectCsvWriter } from 'csv-writer';
