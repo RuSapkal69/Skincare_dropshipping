@@ -1,5 +1,5 @@
-import { create, find, countDocuments, findById, findByIdAndUpdate, aggregate } from '../models/Order';
-import { findById as _findById } from '../models/Product';
+import { create, find, countDocuments, findById, findByIdAndUpdate, aggregate } from '../models/Order.js';
+import { findById as _findById } from '../models/Product.js';
 
 // @desc    Create new order
 // @route   POST /api/orders

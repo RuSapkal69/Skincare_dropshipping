@@ -1,5 +1,5 @@
 import { verify } from 'jsonwebtoken';
-import { findById } from '../models/User';
+import { findById } from '../models/User.js';
 
 // Protect routes - verify JWT token for users
 export async function protect(req, res, next) {

@@ -1,7 +1,7 @@
 import { Router } from 'express';
 const router = Router();
-import { protect } from '../middleware/authMiddleware';
-import { getAllProducts, getProductById, searchProducts, getProductsByCategory, getProductsByOrigin, refreshProducts } from '../controllers/productController';
+import { protect } from '../middleware/authMiddleware.js';
+import { getAllProducts, getProductById, searchProducts, getProductsByCategory, getProductsByOrigin, refreshProducts } from '../controllers/productController.js';
 
 // Get all products
 router.get('/', getAllProducts);

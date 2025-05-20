@@ -1,6 +1,6 @@
 import { Router } from 'express';
 const router = Router();
-import { createOrder } from '../controllers/orderController';
+import { createOrder } from '../controllers/orderController.js';
 
 
 router.get('/track/:id', trackOrder);

@@ -1,9 +1,9 @@
 import { connect, disconnect } from 'mongoose';
 import { config } from 'dotenv';
-import { getProducts } from '../services/glowroadService';
-import { getProducts as _getProducts } from '../services/spocketService';
-import { normalizeProduct } from '../utils/normalizer';
-import { findOne, findOneAndUpdate, create } from '../models/Product';
+import { getProducts } from '../services/glowroadService.js';
+import { getProducts as _getProducts } from '../services/spocketService.js';
+import { normalizeProduct } from '../utils/normalizer.js';
+import { findOne, findOneAndUpdate, create } from '../models/Product.js';
 
 // Load env vars
 config({ path: '../.env' });

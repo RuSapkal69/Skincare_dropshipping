@@ -1,7 +1,7 @@
 import { sign } from 'jsonwebtoken';
 import { createHash } from 'crypto';
 import { createTransport } from 'nodemailer';
-import { findOne, create, findById } from '../models/Admin';
+import { findOne, create, findById } from '../models/Admin.js';
 
 // Generate JWT Token
 const generateToken = (id) => {

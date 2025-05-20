@@ -1,7 +1,7 @@
-import { find, countDocuments, findById, findOne, findOneAndUpdate, create } from '../models/Product';
-import { normalizeProduct } from '../utils/normalizer';
-import { getProducts } from '../services/glowroadService';
-import { getProducts as _getProducts } from '../services/spocketService';
+import { find, countDocuments, findById, findOne, findOneAndUpdate, create } from '../models/Product.js';
+import { normalizeProduct } from '../utils/normalizer.js';
+import { getProducts } from '../services/glowroadService.js';
+import { getProducts as _getProducts } from '../services/spocketService.js';
 
 // @desc    Get all products
 // @route   GET /api/products

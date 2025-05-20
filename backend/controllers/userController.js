@@ -1,6 +1,6 @@
-import { findOne, create, findById, findByIdAndUpdate } from '../models/User';
-import { create as _create } from '../models/Cart';
-import { find, findById as _findById } from '../models/Order';
+import { findOne, create, findById, findByIdAndUpdate } from '../models/User.js';
+import { create as _create } from '../models/Cart.js';
+import { find, findById as _findById } from '../models/Order.js';
 import { sign } from 'jsonwebtoken';
 import { createHash } from 'crypto';
 import { createTransport } from 'nodemailer';

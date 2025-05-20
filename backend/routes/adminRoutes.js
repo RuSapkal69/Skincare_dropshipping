@@ -1,36 +1,9 @@
-const express = require('express');
-const router = express.Router();
-const { protect, authorize } = require('../middleware/authMiddleware');
-const { 
-  loginAdmin, 
-  registerAdmin, 
-  getAdminProfile,
-  generateLoginOTP,
-  verifyLoginOTP
-} = require('../controllers/authController');
-const {
-  getDashboardStats,
-  getTopSellingProducts,
-  getTrendingProducts,
-  getAllProductsWithSales,
-  updateProduct,
-  deleteProduct,
-  exportSalesData,
-  getSalesByRegion,
-  getSalesByCategory,
-  getCustomerDemographics,
-  getSalesForecast,
-  getProductPerformance,
-  getInventoryAnalysis,
-  getCustomerCohortAnalysis
-} = require('../controllers/adminController');
-const {
-  getAllOrders,
-  getOrderById,
-  updateOrderStatus,
-  deleteOrder,
-  getOrderStats
-} = require('../controllers/orderController');
+import { Router } from 'express';
+const router = Router();
+import { protect, authorize } from '../middleware/authMiddleware.js';
+import { loginAdmin, registerAdmin, getAdminProfile, generateLoginOTP, verifyLoginOTP } from '../controllers/authController.js';
+import { getDashboardStats, getTopSellingProducts, getTrendingProducts, getAllProductsWithSales, updateProduct, deleteProduct, exportSalesData, getSalesByRegion, getSalesByCategory, getCustomerDemographics, getSalesForecast, getProductPerformance, getInventoryAnalysis, getCustomerCohortAnalysis } from '../controllers/adminController.js';
+import { getAllOrders, getOrderById, updateOrderStatus, deleteOrder, getOrderStats } from '../controllers/orderController.js';
 
 // Auth routes
 router.post('/login', loginAdmin);
@@ -68,4 +41,4 @@ router.get('/analytics/customer-cohorts', protect, getCustomerCohortAnalysis);
 // Export data
 router.get('/export/sales', protect, exportSalesData);
 
-module.exports = router;
+export default router;

@@ -1,7 +1,7 @@
 import { Router } from 'express';
 const router = Router();
-import { protect, verifiedOnly } from '../middleware/userMiddleware';
-import { registerUser, loginUser, verifyEmail, forgotPassword, resetPassword, getUserProfile, updateUserProfile, addAddress, updateAddress, deleteAddress, getUserOrders, getUserOrderDetails, addToWishlist, removeFromWishlist, getWishlist } from '../controllers/userController';
+import { protect, verifiedOnly } from '../middleware/userMiddleware.js';
+import { registerUser, loginUser, verifyEmail, forgotPassword, resetPassword, getUserProfile, updateUserProfile, addAddress, updateAddress, deleteAddress, getUserOrders, getUserOrderDetails, addToWishlist, removeFromWishlist, getWishlist } from '../controllers/userController.js';
 
 // Auth routes
 router.post('/register', registerUser);

@@ -3,7 +3,7 @@ import cors from 'cors';
 import morgan from 'morgan';
 import helmet from 'helmet';
 import rateLimit from 'express-rate-limit';
-import connectDB from './config/db';
+import connectDB from './config/db.js';
 import { config } from 'dotenv';
 
 // Load env vars
