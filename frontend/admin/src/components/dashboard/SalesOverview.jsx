@@ -7,7 +7,7 @@ import {
   ShoppingCartIcon, 
   UsersIcon 
 } from '@heroicons/react/24/outline';
-import { formatCurrency } from '../../utils/formatters';
+// import { formatCurrency } from '../../utils/formatters';
 
 const StatCard = ({ title, value, icon, change, changeType }) => {
   return (

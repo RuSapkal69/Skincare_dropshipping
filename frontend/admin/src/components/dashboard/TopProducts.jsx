@@ -2,7 +2,7 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import Card from '../common/Card';
-import { formatCurrency } from '../../utils/formatters';
+// import { formatCurrency } from '../../utils/formatters';
 
 const TopProducts = ({ products, loading }) => {
   if (loading) {

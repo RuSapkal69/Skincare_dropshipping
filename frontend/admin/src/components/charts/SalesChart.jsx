@@ -13,7 +13,7 @@ import {
   Filler
 } from 'chart.js';
 import Card from '../common/Card';
-import { formatCurrency } from '../../utils/formatters';
+// import { formatCurrency } from '../../utils/formatters';
 
 // Register ChartJS components
 ChartJS.register(

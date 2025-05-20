@@ -3,7 +3,7 @@ import React, { useState } from 'react';
 import { ResponsiveChoropleth } from '@nivo/geo';
 import { ComposableMap, Geographies, Geography } from 'react-simple-maps';
 import Card from '../common/Card';
-import { formatCurrency } from '../../utils/formatters';
+// import { formatCurrency } from '../../utils/formatters';
 // import worldGeoData from "../../../assets/data/world-countries.json";
 
 
