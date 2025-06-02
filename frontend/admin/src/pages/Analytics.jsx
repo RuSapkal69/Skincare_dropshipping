@@ -5,8 +5,8 @@ import {
   CurrencyDollarIcon,
   ShoppingBagIcon,
   UsersIcon,
-  TrendingUpIcon,
-  TrendingDownIcon,
+  ArrowTrendingUpIcon,
+  ArrowTrendingDownIcon,
   CalendarIcon,
 } from "@heroicons/react/24/outline"
 
@@ -80,9 +80,9 @@ const Analytics = () => {
 
   const getGrowthIcon = (growth) => {
     if (growth > 0) {
-      return <TrendingUpIcon className="h-4 w-4 text-green-500" />
+      return <ArrowTrendingUpIcon className="h-4 w-4 text-green-500" />
     } else if (growth < 0) {
-      return <TrendingDownIcon className="h-4 w-4 text-red-500" />
+      return <ArrowTrendingDownIcon className="h-4 w-4 text-red-500" />
     }
     return null
   }
