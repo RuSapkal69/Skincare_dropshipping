@@ -1,4 +1,3 @@
-"use client"
 import { Link } from "react-router-dom"
 import { ShoppingCartIcon, HeartIcon } from "@heroicons/react/24/outline"
 
