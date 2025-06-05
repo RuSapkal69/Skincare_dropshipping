@@ -70,6 +70,7 @@ const Login = () => {
                   type="email"
                   className="pl-10 w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-primary focus:border-primary"
                   placeholder="you@example.com"
+                  autoComplete="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   required
@@ -95,6 +96,7 @@ const Login = () => {
                   type="password"
                   className="pl-10 w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-primary focus:border-primary"
                   placeholder="••••••••"
+                  autoComplete="current-password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   required
