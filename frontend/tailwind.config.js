@@ -1,5 +1,9 @@
 /** @type {import('tailwindcss').Config} */
-export const content = ["./frontend/**/*.{js,jsx,ts,tsx}"];
+export const content = [
+  "./admin/src/**/*.{js,jsx,ts,tsx}",
+  "./client/src/**/*.{js,jsx,ts,tsx}",
+  "./index.html"
+];
 export const darkMode = "class";
 export const theme = {
   extend: {
